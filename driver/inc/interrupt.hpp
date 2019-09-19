@@ -25,13 +25,52 @@
 #define INTERRUPT_HPP_
 
 #include <cstdint>
+class Interrupt
+{
+public:
+	typedef void (*handlerType)(void);
 
-class Interrupt {
+	virtual void setPriority( uint8_t prioy ) =0;
+
+ 	virtual void enable() =0;
+
+	virtual void disable() =0;
+
+	virtual ~Interrupt() =0;
+};
+
+class ClintInterrupt : public Interrupt
+{
 public:
 	/************************************************************************
 	 *  Compile-time configuration parameters
 	 ************************************************************************/
+	static constexpr uint16_t	software  = 8u;   /* SW interrupt is represented as bit 3 in the mie and mip csr */
+	static constexpr uint16_t	timer     = 128u; /* Timer interrupt is represented as bit 7 in the mie and mip csr */
+	static constexpr uint16_t   external  = 2048; /* External interrupt is represented as bit 11 in the mie and mip csr */
 
+	ClintInterrupt( const uint16_t interruptSelect );
+
+	virtual ~ClintInterrupt();
+
+	void setPriority( uint8_t prioy );
+
+ 	void enable ();
+
+	void disable ();
+
+	static void defaultHandler();
+
+private:
+	uint16_t interruptBit;
+};
+
+class PlicInterrupt : public Interrupt
+{
+public:
+	/************************************************************************
+	 *  Compile-time configuration parameters
+	 ************************************************************************/
 	static constexpr int8_t	notUsed  = 0;
 	static constexpr int8_t	watchdog = 1;
 	static constexpr int8_t	rtc      = 2;
@@ -86,13 +125,11 @@ public:
 	static constexpr int8_t	pwm2cmp3 = 51;
 	static constexpr int8_t	numberOfSources = 52;
 
-	typedef void (*handlerType)(void);
-
 	static void init();
 
-	Interrupt( const int8_t interruptSelect );
+	PlicInterrupt( const int8_t interruptSelect );
 
-	virtual ~Interrupt();
+	virtual ~PlicInterrupt();
 
 	static void setThreshold ( uint32_t threshold );
 
@@ -126,7 +163,6 @@ private:
 	static constexpr uint32_t enableArrayOffset       = 0x2000;
 	static constexpr uint32_t priorityThresholdOffset = 0x200000;
 	static constexpr uint32_t claimCompleteOffset     = 0x200004;
-
 
 };
 

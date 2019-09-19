@@ -28,17 +28,18 @@
 
 /***********************************************************************/
 
-Clock::clockRegisterType* const Clock::clockRegister = reinterpret_cast<Clock::clockRegisterType*>( Clock::crtiBaseAddress );
+ClockImp::clockRegisterType* const ClockImp::crti = reinterpret_cast<ClockImp::clockRegisterType* const>( ClockImp::crtiBaseAddress );
 
-Clock::Clock()
+ClockImp::ClockImp( clockRegisterType* const clockReg ):
+	clockRegister( crti )
 {
 }
 
-Clock::~Clock()
+ClockImp::~ClockImp()
 {
 }
 
-void Clock::usePllWithHfXosc()
+void ClockImp::usePllWithHfXosc()
 {
 	enableHfXosc();
 	enablePll();
@@ -46,7 +47,7 @@ void Clock::usePllWithHfXosc()
 	disableHfRosc();
 }
 
-void Clock::enableHfXosc()
+void ClockImp::enableHfXosc()
 {
 	hwRegOps::setBits( clockRegister->hfXoscCfg, hfXoscEnableBit );
 	while ( false == hwRegOps::compareBits( clockRegister->hfXoscCfg, hfXoscReadyBit ) )
@@ -55,7 +56,7 @@ void Clock::enableHfXosc()
 	}
 }
 
-void Clock::enablePll()
+void ClockImp::enablePll()
 {
     /* Set up dividers and multipliers inside the pll according to compile-time settings */
 	hwRegOps::setRegister( clockRegister->pllCfg, pllSetUpMask, pllSetUp );
@@ -76,12 +77,17 @@ void Clock::enablePll()
 	}
 }
 
-void Clock::selectPll()
+void ClockImp::selectPll()
 {
 	hwRegOps::setBits( clockRegister->pllCfg, pllSelBit );
 }
 
-void Clock::disableHfRosc()
+void ClockImp::disableHfRosc()
 {
     hwRegOps::clearBits( clockRegister->hfRoscCfg, hfRoscEnableBit );
+}
+
+Clock::~Clock()
+{
+	/* C++ demands that even a pure virtual destructor has an implementation */
 }

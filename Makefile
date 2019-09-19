@@ -21,12 +21,12 @@ APP_SOURCE_PATH = application/src/
 DRV_SOURCE_PATH = driver/src/
 DRV_ASM_PATH = driver/asm/
 
-GCC_PATH = ~/tools/riscv32-custom/bin/
+GCC_PATH = ~/tools/riscv32-custom_/bin/
 G++ = $(GCC_PATH)riscv32-unknown-elf-g++
 LD = $(GCC_PATH)riscv32-unknown-elf-g++
 
-G++_FLAGS = -O0 -g -c -fno-exceptions -fno-unwind-tables -MD
-LD_FLAGS = -g -ffreestanding -Wl,--gc-sections \
+G++_FLAGS = -O0 -g -c -fno-exceptions -fno-unwind-tables -MD -specs=nano.specs
+LD_FLAGS = -g -ffreestanding -Wl,--gc-sections -specs=nano.specs \
            -nostartfiles -fno-exceptions -fno-unwind-tables -fno-use-cxa-atexit \
            -Wl,-T,riscv32_sifive_e.ld -Xlinker -Map=$(BUILD_PATH)/blink.map
         
@@ -73,7 +73,7 @@ $(BUILD_PATH)/echo.elf : $(addprefix $(OBJ_PATH)/, $(OBJ))
 	$(LD) $(LD_FLAGS) $^ -o$@
 		 
 clean :
-	rm $(BUILD_PATH)/blink.elf $(OBJ_PATH)/*.*
+	rm $(BUILD_PATH)/echo.elf $(OBJ_PATH)/*.*
 	
 -include $(addprefix $(OBJ_PATH), $(OBJ:.o=.d))
     

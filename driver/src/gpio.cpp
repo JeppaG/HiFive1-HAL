@@ -24,23 +24,21 @@
 #include "gpio.hpp"
 #include "hwRegisterOperations.hpp"
 
-Gpio gpioObject0;
-
-Gpio* gpio = &gpioObject0;
-
 /***********************************************************************/
 
-Gpio::gpioRegisterType* const Gpio::gpioRegister = reinterpret_cast<gpioRegisterType*>( Gpio::gpio0 );
+GpioImp::gpioRegisterType* const GpioImp::gpio0 = reinterpret_cast<gpioRegisterType*>( GpioImp::gpio0BaseAddress );
 
-Gpio::Gpio()
+GpioImp::GpioImp( gpioRegisterType* const gpio, const uint32_t gpioPin ) :
+	gpioRegister( gpio ),
+	pin( gpioPin )
 {
 }
 
-Gpio::~Gpio()
+GpioImp::~GpioImp()
 {
 }
 
-void Gpio::setAsOutput( const uint32_t pin )
+void GpioImp::setAsOutput()
 {
 	hwRegOps::clearBits( gpioRegister->ioFunctionEnable, pin );
 	hwRegOps::clearBits( gpioRegister->outputXor, pin );
@@ -49,7 +47,7 @@ void Gpio::setAsOutput( const uint32_t pin )
 	hwRegOps::setBits( gpioRegister->outputEnable, pin );
 }
 
-void Gpio::setAsInput ( const uint32_t pin )
+void GpioImp::setAsInput()
 {
 	hwRegOps::clearBits( gpioRegister->outputEnable, pin );
 	hwRegOps::clearBits( gpioRegister->ioFunctionEnable, pin );
@@ -58,36 +56,41 @@ void Gpio::setAsInput ( const uint32_t pin )
 	hwRegOps::setBits( gpioRegister->inputEnable, pin );
 }
 
-void Gpio::setAsIoFunction0 ( const uint32_t pin )
+void GpioImp::setAsIoFunction0()
 {
 	hwRegOps::clearBits( gpioRegister->ioFunctionSelect, pin );
 	hwRegOps::setBits( gpioRegister->ioFunctionEnable, pin );
 }
 
-void Gpio::setAsIoFunction1 ( const uint32_t pin )
+void GpioImp::setAsIoFunction1()
 {
 	hwRegOps::setBits( gpioRegister->ioFunctionSelect, pin );
 	hwRegOps::setBits( gpioRegister->ioFunctionEnable, pin );
 }
 
-void Gpio::vEnableRiseIrq ( const uint32_t pin )
+void GpioImp::vEnableRiseIrq()
 {
 	hwRegOps::clearBits( gpioRegister->riseIrqPending, pin );
 	hwRegOps::setBits( gpioRegister->riseIrqEnable, pin );
 }
 
-void Gpio::vDisableRiseIrq ( const uint32_t pin )
+void GpioImp::vDisableRiseIrq()
 {
 	hwRegOps::clearBits( gpioRegister->riseIrqPending, pin );
 	hwRegOps::clearBits( gpioRegister->riseIrqEnable, pin );
 }
 
-void Gpio::set( const uint32_t pin )
+void GpioImp::set()
 {
 	hwRegOps::setBits( gpioRegister->port, pin );
 }
 
-void Gpio::clear( const uint32_t pin )
+void GpioImp::clear()
 {
 	hwRegOps::clearBits( gpioRegister->port, pin );
+}
+
+Gpio::~Gpio()
+{
+	/* In C++ even a pure virtual destructor must have an implementation */
 }

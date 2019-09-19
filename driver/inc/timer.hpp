@@ -26,30 +26,17 @@
 
 #include <cstdint>
 
-class Timer {
+class Pwm {
 public:
-	/************************************************************************
-	 *  Compile-time configuration parameters
-	 ************************************************************************/
-	static constexpr uint8_t pwm0 = 0;
-	static constexpr uint8_t pwm1 = 1;
-	static constexpr uint8_t pwm2 = 2;
+	virtual ~Pwm() =0;
 
-	Timer( const uint8_t timerSelect );
+	virtual void setUp1MsTimeBase() =0;
 
-	virtual ~Timer();
+	virtual void waitFor1MsTimeOut () =0;
+};
 
-	void setUp1MsTimeBase();
-
-	void waitFor1MsTimeOut ();
-
-	/* The interrupt handlers are declared public, since they are needed in the global
-	 * interrupt vector table. They are not meant to be accessed through the interface of the class
-	 */
-	static void pwm1cmp0handler();
-
-private:
-
+class PwmImp : public Pwm {
+public:
 	typedef struct {
       volatile       uint32_t pwmCfg;          /* Base address + 0  */
       volatile       uint32_t reserved1;       /* Base address + 4  */
@@ -64,13 +51,28 @@ private:
       volatile       uint32_t pwmCmp2;         /* Base address + 40 */
       volatile       uint32_t pwmCmp3;         /* Base address + 44 */
 
-	} timerRegisterType;
+	} pwmRegisterType;
 
-	static timerRegisterType* const timerRegisterPwm0;
-	static timerRegisterType* const timerRegisterPwm1;
-	static timerRegisterType* const timerRegisterPwm2;
+	static pwmRegisterType* const pwm0;
+	static pwmRegisterType* const pwm1;
+	static pwmRegisterType* const pwm2;
 
-	timerRegisterType* timerRegister;
+	PwmImp( pwmRegisterType* const pwmSelect );
+
+	virtual ~PwmImp();
+
+	void setUp1MsTimeBase();
+
+	void waitFor1MsTimeOut ();
+
+	/* The interrupt handlers are declared public, since they are needed in the global
+	 * interrupt vector table. They are not meant to be accessed through the interface of the class
+	 */
+	static void pwm1cmp0handler();
+
+private:
+
+	pwmRegisterType* pwmRegister;
 
 	/************************************************************************
 	 *  Compile-time configuration parameters
@@ -110,9 +112,5 @@ private:
 	/*********************************************************************/
 
 };
-
-extern Timer* timer0;
-extern Timer* timer1;
-extern Timer* timer2;
 
 #endif /* TIMER_HPP_ */

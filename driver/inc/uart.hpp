@@ -25,18 +25,43 @@
 #define UART_HPP_
 
 #include <cstdint>
-#include "interrupt.hpp"
 
 class Uart {
 public:
-	typedef uint32_t baseAddress;
+	virtual ~Uart() =0;
 
-	static constexpr baseAddress uart0 = 0x10013000u;
+	virtual void enableTx() =0;
 
-	Uart( const baseAddress selectedUart,
-		  const uint32_t    selectedBaudRate );
+	virtual void enableRx() =0;
 
-	virtual ~Uart();
+	virtual void disableTx() =0;
+
+	virtual void disableRx() =0;
+
+	virtual void transmit ( const uint8_t* buffer, const uint8_t length ) =0;
+
+	virtual uint8_t receive ( uint8_t* buffer ) =0;
+};
+
+class UartImp : public Uart
+{
+public:
+	typedef struct {
+      volatile       uint32_t txData;          /* Base address + 0  */
+      volatile       uint32_t rxData;          /* Base address + 4  */
+      volatile       uint32_t txCtrl;          /* Base address + 8  */
+      volatile       uint32_t rxCtrl;          /* Base address + 12 */
+      volatile       uint32_t interruptEnable; /* Base address + 16 */
+      volatile       uint32_t interuptPending; /* Base address + 20 */
+      volatile       uint32_t baudRateDiv;     /* Base address + 24 */
+	} uartRegisterType;
+
+	static uartRegisterType* const uart0Register;
+
+	UartImp( uartRegisterType* const selectedUart,
+		     const uint32_t    selectedBaudRate );
+
+	virtual ~UartImp();
 
 	void enableTx();
 
@@ -57,16 +82,6 @@ private:
 	static constexpr int bufferSize = 32; /* Max 32 bytes can be stored in internal buffers */
 
 	typedef struct {
-      volatile       uint32_t txData;          /* Base address + 0  */
-      volatile       uint32_t rxData;          /* Base address + 4  */
-      volatile       uint32_t txCtrl;          /* Base address + 8  */
-      volatile       uint32_t rxCtrl;          /* Base address + 12 */
-      volatile       uint32_t interruptEnable; /* Base address + 16 */
-      volatile       uint32_t interuptPending; /* Base address + 20 */
-      volatile       uint32_t baudRateDiv;     /* Base address + 24 */
-	} uartRegisterType;
-
-	typedef struct {
 		uint8_t	buffer[bufferSize];
 		uint8_t	writePointer;
 		uint8_t readPointer;
@@ -84,7 +99,6 @@ private:
 	 * be declared static.
 	 */
 	static dataType  uart0Data;
-	static uartRegisterType* const uart0Register;
 
 	uint32_t getBaudRateDiv ( const uint32_t tlClockInHz, const uint32_t ui32BaudRate );
 
@@ -115,7 +129,8 @@ private:
 	/************************************************************************
 	 *  Compile-time configuration parameters
 	 ************************************************************************/
-
+	/* Set the pointers to the uart registers base addresses to the addresses indicated in the FE310-G000 chip manual */
+	static constexpr uint32_t uart0BaseAddress = 0x10013000u;
 
 	static constexpr uint32_t txConfig = 0x0000000u;
 	                                  /* 0000 0000 0000 0000 0000 0000 0000 0000
@@ -144,7 +159,5 @@ private:
 	static constexpr uint32_t waterMarkLevel7       = 0x00070000;
 	static constexpr uint32_t waterMarkLevelMask    = 0x00070000;
 };
-
-extern Uart* uart0;
 
 #endif /* UART_HPP_ */

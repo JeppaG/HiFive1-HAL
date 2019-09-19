@@ -33,49 +33,98 @@ extern "C"
 	extern void _enable_plic_interrupt( uint32_t interruptId );
 }
 
+ClintInterrupt::ClintInterrupt( const uint16_t interruptId ):
+	interruptBit ( interruptId )
+{
+}
+
+ClintInterrupt::~ClintInterrupt()
+{
+}
+
+void ClintInterrupt::setPriority( uint8_t prio )
+{
+	/* The priority is fixed for Clint interrupts */
+}
+
+void ClintInterrupt::enable ()
+{
+	asm volatile( "   csrrs zero, mie, %0;"  /* Set interrupt enable bit in csr mie */
+		 : /* Output Operands */ /* None */
+		 : /* Input Operands */  "r" ( interruptBit )  /* %0 */
+		 : /* Clobbered Registers */ /* None */
+    );
+}
+
+void ClintInterrupt::disable ()
+{
+	asm volatile( "   csrrc zero, mie, %0;"  /* Clear interrupt enable bit in csr mie */
+		 : /* Output Operands */ /* None */
+		 : /* Input Operands */  "r" ( interruptBit )  /* %0 */
+		 : /* Clobbered Registers */ /* None */
+    );
+}
+
+void ClintInterrupt::defaultHandler()
+{
+//	while (1);
+}
+
+/*********************************************************************************************************
+ * Clint Interrupt vectors
+ */
+extern "C"
+{
+    extern const Interrupt::handlerType _tickTimerHandler = ClintInterrupt::defaultHandler;
+    extern const Interrupt::handlerType _swInterruptHandler = ClintInterrupt::defaultHandler;
+}
+
 /*************** Declaration of static members **********************/
-volatile  uint32_t* const Interrupt::priority = reinterpret_cast<uint32_t*>( plicBaseAddress );
-volatile  uint32_t* const Interrupt::pendingArray = reinterpret_cast<uint32_t*>( plicBaseAddress + pendingArrayOffset );
-volatile  uint32_t* const Interrupt::enableArray = reinterpret_cast<uint32_t*>( plicBaseAddress + enableArrayOffset );
-volatile  uint32_t* const Interrupt::priorityThreshold = reinterpret_cast<uint32_t*>( plicBaseAddress + priorityThresholdOffset );
-volatile  uint32_t* const Interrupt::claimComplete = reinterpret_cast<uint32_t*>( plicBaseAddress + claimCompleteOffset );
+volatile  uint32_t* const PlicInterrupt::priority = reinterpret_cast<uint32_t*>( plicBaseAddress );
+volatile  uint32_t* const PlicInterrupt::pendingArray = reinterpret_cast<uint32_t*>( plicBaseAddress + pendingArrayOffset );
+volatile  uint32_t* const PlicInterrupt::enableArray = reinterpret_cast<uint32_t*>( plicBaseAddress + enableArrayOffset );
+volatile  uint32_t* const PlicInterrupt::priorityThreshold = reinterpret_cast<uint32_t*>( plicBaseAddress + priorityThresholdOffset );
+volatile  uint32_t* const PlicInterrupt::claimComplete = reinterpret_cast<uint32_t*>( plicBaseAddress + claimCompleteOffset );
 
 
 /***********************************************************************/
-void Interrupt::init()
+void PlicInterrupt::init()
 {
 	_set_trap_vector();
 	_disable_all_plic_interrupts();
 }
 
-Interrupt::Interrupt( const int8_t interruptSelect ) :
+PlicInterrupt::PlicInterrupt( const int8_t interruptSelect ) :
     source( interruptSelect )
 {
 }
 
-Interrupt::~Interrupt()
+PlicInterrupt::~PlicInterrupt()
 {
 }
 
-void Interrupt::setThreshold ( uint32_t threshold )
+void PlicInterrupt::setThreshold ( uint32_t threshold )
 {
 	*priorityThreshold = threshold;
 }
 
-void Interrupt::setPriority( uint8_t prio )
+void PlicInterrupt::setPriority( uint8_t prio )
 {
-	priority[source] = prio;
+	if ( 0 < source )
+	{
+		priority[source] = prio;
+	}
 }
 
-void Interrupt::enable ()
+void PlicInterrupt::enable ()
 {
 	extern void _enable_plic_interrupt( uint32_t interruptNumber );
 
 	_enable_plic_interrupt ( source );
-	priority[source] = 7;
+    priority[source] = 7;
 }
 
-void Interrupt::disable ()
+void PlicInterrupt::disable ()
 {
 	if ( 32 > source )
 	{
@@ -89,67 +138,73 @@ void Interrupt::disable ()
 	}
 }
 
-void Interrupt::defaultHandler()
+void PlicInterrupt::defaultHandler()
 {
 //	while (1);
 }
 
-
-/*** Interrupt Vector Table ***/
+/*** PLIC Interrupt Vector Table ***/
 extern "C"
 {
-	extern const Interrupt::handlerType interruptVectorTable[Interrupt::numberOfSources] = {
-		/* notUsed  */ Interrupt::defaultHandler,
-		/* watchdog */ Interrupt::defaultHandler,
-		/* rtc      */ Interrupt::defaultHandler,
-		/* uart0    */ Uart::uart0InterruptHandler,
-		/* uart1    */ Interrupt::defaultHandler,
-		/* qspiI0   */ Interrupt::defaultHandler,
-		/* qspiI1   */ Interrupt::defaultHandler,
-		/* qspiI2   */ Interrupt::defaultHandler,
-		/* gpio0    */ Interrupt::defaultHandler,
-		/* gpio1    */ Interrupt::defaultHandler,
-		/* gpio2    */ Interrupt::defaultHandler,
-		/* gpio3    */ Interrupt::defaultHandler,
-		/* gpio4    */ Interrupt::defaultHandler,
-		/* gpio5    */ Interrupt::defaultHandler,
-		/* gpio6    */ Interrupt::defaultHandler,
-		/* gpio7    */ Interrupt::defaultHandler,
-		/* gpio8    */ Interrupt::defaultHandler,
-		/* gpio9    */ Interrupt::defaultHandler,
-		/* gpio10   */ Interrupt::defaultHandler,
-		/* gpio11   */ Interrupt::defaultHandler,
-		/* gpio12   */ Interrupt::defaultHandler,
-		/* gpio13   */ Interrupt::defaultHandler,
-		/* gpio14   */ Interrupt::defaultHandler,
-		/* gpio15   */ Interrupt::defaultHandler,
-		/* gpio16   */ Interrupt::defaultHandler,
-		/* gpio17   */ Interrupt::defaultHandler,
-		/* gpio18   */ Interrupt::defaultHandler,
-		/* gpio19   */ Interrupt::defaultHandler,
-		/* gpio20   */ Interrupt::defaultHandler,
-		/* gpio21   */ Interrupt::defaultHandler,
-		/* gpio22   */ Interrupt::defaultHandler,
-		/* gpio23   */ Interrupt::defaultHandler,
-		/* gpio24   */ Interrupt::defaultHandler,
-		/* gpio25   */ Interrupt::defaultHandler,
-		/* gpio26   */ Interrupt::defaultHandler,
-		/* gpio27   */ Interrupt::defaultHandler,
-		/* gpio28   */ Interrupt::defaultHandler,
-		/* gpio29   */ Interrupt::defaultHandler,
-		/* gpio30   */ Interrupt::defaultHandler,
-		/* gpio31   */ Interrupt::defaultHandler,
-		/* pwm0cmp0 */ Interrupt::defaultHandler,
-		/* pwm0cmp1 */ Interrupt::defaultHandler,
-		/* pwm0cmp2 */ Interrupt::defaultHandler,
-		/* pwm0cmp3 */ Interrupt::defaultHandler,
-		/* pwm1cmp0 */ Timer::pwm1cmp0handler,
-		/* pwm1cmp1 */ Interrupt::defaultHandler,
-		/* pwm1cmp2 */ Interrupt::defaultHandler,
-		/* pwm1cmp3 */ Interrupt::defaultHandler,
-		/* pwm2cmp0 */ Interrupt::defaultHandler,
-		/* pwm2cmp1 */ Interrupt::defaultHandler,
-		/* pwm2cmp2 */ Interrupt::defaultHandler,
-	    /* pwm2cmp3 */ Interrupt::defaultHandler
+	extern const Interrupt::handlerType interruptVectorTable[PlicInterrupt::numberOfSources] = {
+		/* notUsed  */ PlicInterrupt::defaultHandler,
+		/* watchdog */ PlicInterrupt::defaultHandler,
+		/* rtc      */ PlicInterrupt::defaultHandler,
+		/* uart0    */ UartImp::uart0InterruptHandler,
+		/* uart1    */ PlicInterrupt::defaultHandler,
+		/* qspiI0   */ PlicInterrupt::defaultHandler,
+		/* qspiI1   */ PlicInterrupt::defaultHandler,
+		/* qspiI2   */ PlicInterrupt::defaultHandler,
+		/* gpio0    */ PlicInterrupt::defaultHandler,
+		/* gpio1    */ PlicInterrupt::defaultHandler,
+		/* gpio2    */ PlicInterrupt::defaultHandler,
+		/* gpio3    */ PlicInterrupt::defaultHandler,
+		/* gpio4    */ PlicInterrupt::defaultHandler,
+		/* gpio5    */ PlicInterrupt::defaultHandler,
+		/* gpio6    */ PlicInterrupt::defaultHandler,
+		/* gpio7    */ PlicInterrupt::defaultHandler,
+		/* gpio8    */ PlicInterrupt::defaultHandler,
+		/* gpio9    */ PlicInterrupt::defaultHandler,
+		/* gpio10   */ PlicInterrupt::defaultHandler,
+		/* gpio11   */ PlicInterrupt::defaultHandler,
+		/* gpio12   */ PlicInterrupt::defaultHandler,
+		/* gpio13   */ PlicInterrupt::defaultHandler,
+		/* gpio14   */ PlicInterrupt::defaultHandler,
+		/* gpio15   */ PlicInterrupt::defaultHandler,
+		/* gpio16   */ PlicInterrupt::defaultHandler,
+		/* gpio17   */ PlicInterrupt::defaultHandler,
+		/* gpio18   */ PlicInterrupt::defaultHandler,
+		/* gpio19   */ PlicInterrupt::defaultHandler,
+		/* gpio20   */ PlicInterrupt::defaultHandler,
+		/* gpio21   */ PlicInterrupt::defaultHandler,
+		/* gpio22   */ PlicInterrupt::defaultHandler,
+		/* gpio23   */ PlicInterrupt::defaultHandler,
+		/* gpio24   */ PlicInterrupt::defaultHandler,
+		/* gpio25   */ PlicInterrupt::defaultHandler,
+		/* gpio26   */ PlicInterrupt::defaultHandler,
+		/* gpio27   */ PlicInterrupt::defaultHandler,
+		/* gpio28   */ PlicInterrupt::defaultHandler,
+		/* gpio29   */ PlicInterrupt::defaultHandler,
+		/* gpio30   */ PlicInterrupt::defaultHandler,
+		/* gpio31   */ PlicInterrupt::defaultHandler,
+		/* pwm0cmp0 */ PlicInterrupt::defaultHandler,
+		/* pwm0cmp1 */ PlicInterrupt::defaultHandler,
+		/* pwm0cmp2 */ PlicInterrupt::defaultHandler,
+		/* pwm0cmp3 */ PlicInterrupt::defaultHandler,
+		/* pwm1cmp0 */ PwmImp::pwm1cmp0handler,
+		/* pwm1cmp1 */ PlicInterrupt::defaultHandler,
+		/* pwm1cmp2 */ PlicInterrupt::defaultHandler,
+		/* pwm1cmp3 */ PlicInterrupt::defaultHandler,
+		/* pwm2cmp0 */ PlicInterrupt::defaultHandler,
+		/* pwm2cmp1 */ PlicInterrupt::defaultHandler,
+		/* pwm2cmp2 */ PlicInterrupt::defaultHandler,
+	    /* pwm2cmp3 */ PlicInterrupt::defaultHandler
 	};
 };
+
+Interrupt::~Interrupt()
+{
+	/* C++ demands that even a pure virtual destructor has an implementation */
+}
+
+

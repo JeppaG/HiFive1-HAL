@@ -27,8 +27,35 @@
 #include "uart.hpp"
 #include "minimumCppRuntime.hpp"
 
-Clock clock;
-Interrupt uart0Interrupt( Interrupt::uart0 );
+ClockImp clockImp( ClockImp::crti );
+Clock* clock = dynamic_cast<Clock*>( &clockImp );
+
+ClintInterrupt plicClintInterrupt ( ClintInterrupt::external );
+Interrupt* plicInterrupt = dynamic_cast<Interrupt*>( &plicClintInterrupt );
+
+PlicInterrupt uart0PlicInterrupt( PlicInterrupt::uart0 );
+Interrupt* uart0Interrupt = dynamic_cast<Interrupt*>( &uart0PlicInterrupt );
+
+GpioImp uartRxPinImp( GpioImp::gpio0, GpioImp::pin16 );
+Gpio* uartRxPin = dynamic_cast<Gpio*>( &uartRxPinImp );
+
+GpioImp uartTxPinImp( GpioImp::gpio0, GpioImp::pin17 );
+Gpio* uartTxPin = dynamic_cast<Gpio*>( &uartTxPinImp );
+
+GpioImp greenLedPinImp( GpioImp::gpio0, GpioImp::pin19 );
+Gpio* greenLedPin = dynamic_cast<Gpio*>( &greenLedPinImp );
+
+GpioImp blueLedPinImp( GpioImp::gpio0, GpioImp::pin21 );
+Gpio* blueLedPin = dynamic_cast<Gpio*>( &blueLedPinImp );
+
+GpioImp redLedPinImp( GpioImp::gpio0, GpioImp::pin22 );
+Gpio* redLedPin = dynamic_cast<Gpio*>( &redLedPinImp );
+
+UartImp uart0Imp( UartImp::uart0Register, 115200u );
+Uart* uart0 = dynamic_cast<Uart*>( &uart0Imp );
+
+PwmImp pwm1Imp( PwmImp::pwm1 );
+Pwm* pwm1 = dynamic_cast<Pwm*>( &pwm1Imp );
 
 extern "C"
 {
@@ -39,37 +66,38 @@ int main ()
 {
 	uint8_t stringToPrint[32] = {'H','e','l','l','o',' ','w','o','r','l','d','\n','\r',0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 	uint8_t length = 13;
-	Interrupt::init();
-	Interrupt::setThreshold( 0 );
+	PlicInterrupt::init();
+	PlicInterrupt::setThreshold( 0 );
 	int count = 0;
-	clock.usePllWithHfXosc();
-	timer1->setUp1MsTimeBase();
-	gpio->setAsIoFunction0( Gpio::pin16 ); /* UART0 RX */
-	gpio->setAsIoFunction0( Gpio::pin17 ); /* UART0 TX */
+	clock->usePllWithHfXosc();
+	pwm1->setUp1MsTimeBase();
+	uartRxPin->setAsIoFunction0(); /* UART0 RX */
+	uartTxPin->setAsIoFunction0(); /* UART0 TX */
 	uart0->enableTx();
 	uart0->enableRx();
-	uart0Interrupt.enable();
+	uart0Interrupt->enable();
+	plicInterrupt->enable();
 	_enable_interrupt();
-	gpio->setAsOutput( Gpio::pin19 );
-	gpio->setAsOutput( Gpio::pin21 );
-	gpio->setAsOutput( Gpio::pin22 );
-	gpio->set( Gpio::pin19 );
-	gpio->clear( Gpio::pin21 );
-	gpio->set( Gpio::pin22 );
+	greenLedPin->setAsOutput();
+	blueLedPin->setAsOutput();
+	redLedPin->setAsOutput();
+	greenLedPin->set();
+	blueLedPin->clear();
+	redLedPin->set();
 	while ( 1 )
 	{
 		if ( 500 == count )
 		{
-			gpio->clear( Gpio::pin21 );
+			blueLedPin->clear();
 			uart0->transmit( stringToPrint, length );
 		}
 		if ( 1000 == count )
 		{
 			count = 0;
-			gpio->set( Gpio::pin21 );
+			blueLedPin->set();
 			length = uart0->receive( stringToPrint );
 		}
-		timer1->waitFor1MsTimeOut();
+		pwm1->waitFor1MsTimeOut();
 		count++;
 	}
 	return 0;

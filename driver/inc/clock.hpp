@@ -28,14 +28,15 @@
 
 class Clock {
 public:
-	Clock();
 
-	virtual ~Clock();
+	virtual ~Clock() =0;
 
-    void usePllWithHfXosc();
+    virtual void usePllWithHfXosc() =0;
+};
 
-private:
-
+class ClockImp: public Clock
+{
+public:
 	typedef struct {
       volatile       uint32_t hfRoscCfg;       /* Base address + 0  */
       volatile       uint32_t hfXoscCfg;       /* Base address + 4  */
@@ -43,12 +44,21 @@ private:
       volatile       uint32_t pllOutDiv;       /* Base address + 12 */
 	} clockRegisterType;
 
-	static clockRegisterType* const clockRegister;
+	static clockRegisterType* const crti;
+
+	ClockImp( clockRegisterType* const clockReg );
+
+	virtual ~ClockImp();
+
+    void usePllWithHfXosc();
+
+private:
+
+	clockRegisterType* const clockRegister;
 
 	/************************************************************************
 	 *  Compile-time configuration parameters
 	 ************************************************************************/
-
 	/* Set the pointers to the crti registers base addresses to the addresses indicated in the FE310-G000 chip manual */
 	static constexpr uint32_t crtiBaseAddress = 0x10008000u;
 

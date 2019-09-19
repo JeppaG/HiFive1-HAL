@@ -25,30 +25,26 @@
 #include "hwRegisterOperations.hpp"
 #include <cstring>
 
-Uart uart0Object( Uart::uart0, 115200u );
-
-Uart* uart0 = &uart0Object;
-
-Uart::dataType Uart::uart0Data = {
+UartImp::dataType UartImp::uart0Data = {
 		                       	  /* txBuffer */      {0},
 								  /* rxBuffer */      {0},
                                  };
 
-Uart::uartRegisterType* const Uart::uart0Register = reinterpret_cast<Uart::uartRegisterType*>( uart0 );
+UartImp::uartRegisterType* const UartImp::uart0Register = reinterpret_cast<UartImp::uartRegisterType* const>( UartImp::uart0BaseAddress );
 
-Uart::Uart( const baseAddress selectedUart,
-            const uint32_t    selectedBaudRate ) :
-  uartRegister( reinterpret_cast<uartRegisterType*>( selectedUart ) )
+UartImp::UartImp( uartRegisterType* const selectedUart,
+                  const uint32_t    selectedBaudRate ) :
+  uartRegister( selectedUart )
 {
 	uartRegister->baudRateDiv = getBaudRateDiv ( 256000000u, selectedBaudRate );
-	switch ( selectedUart )
+	if ( uart0Register == selectedUart )
 	{
-	case uart0:
 		data =  &uart0Data;
-		break;
-	default:
+	}
+	else
+	{
 		/* Should not be possible to end up here */
-		break;
+		while ( 1 );
 	}
 
 	disableTx();
@@ -64,43 +60,43 @@ Uart::Uart( const baseAddress selectedUart,
 	data->rxBuffer.writePointer = 0;
 }
 
-Uart::~Uart()
+UartImp::~UartImp()
 {
 	data = nullptr;
 }
 
-void Uart::enableTx()
+void UartImp::enableTx()
 {
 	flushTxBuffer();
 	hwRegOps::setBits( uartRegister->txCtrl, txEnableBit );
 }
 
-void Uart::enableRx()
+void UartImp::enableRx()
 {
 	flushRxBuffer();
 	enableRxInterrupt();
 	hwRegOps::setBits( uartRegister->rxCtrl, rxEnableBit );
 }
 
-void Uart::disableTx()
+void UartImp::disableTx()
 {
 	hwRegOps::clearBits( uartRegister->txCtrl, txEnableBit );
 	disableTxInterrupt();
 }
 
-void Uart::disableRx()
+void UartImp::disableRx()
 {
 	hwRegOps::clearBits( uartRegister->rxCtrl, rxEnableBit );
 	disableTxInterrupt();
 }
 
-void Uart::transmit ( const uint8_t* buffer, const uint8_t length )
+void UartImp::transmit ( const uint8_t* buffer, const uint8_t length )
 {
 	copyToTxBuffer( buffer, length );
     enableTxInterrupt();
 }
 
-uint8_t Uart::receive ( uint8_t* buffer )
+uint8_t UartImp::receive ( uint8_t* buffer )
 {
 	uint32_t length = 0;
 	/* Watermark level 0 will trigger an interrupt if any bytes at all are in the rx FIFO, so that
@@ -113,7 +109,7 @@ uint8_t Uart::receive ( uint8_t* buffer )
 }
 
 
-uint32_t Uart::getBaudRateDiv ( const uint32_t tlClockInHz, const uint32_t baudRateInHz )
+uint32_t UartImp::getBaudRateDiv ( const uint32_t tlClockInHz, const uint32_t baudRateInHz )
 {
 	/* Add 1/2 LSB in the quotient to achieve rounding instead o truncation
 	 * The dividend is defined as ( tlClock/baudRate ) - 1 in the FE310-G000 manual
@@ -123,37 +119,37 @@ uint32_t Uart::getBaudRateDiv ( const uint32_t tlClockInHz, const uint32_t baudR
 	return div/baudRateInHz;
 }
 
-void Uart::enableTxInterrupt()
+void UartImp::enableTxInterrupt()
 {
 	hwRegOps::setBits( uartRegister->interruptEnable, txInterruptEnableBit );
 }
 
-void Uart::disableTxInterrupt()
+void UartImp::disableTxInterrupt()
 {
 	hwRegOps::clearBits( uartRegister->interruptEnable, txInterruptEnableBit );
 }
 
-void Uart::enableRxInterrupt()
+void UartImp::enableRxInterrupt()
 {
 	hwRegOps::setBits( uartRegister->interruptEnable, rxInterruptEnableBit );
 }
 
-void Uart::disableRxInterrupt()
+void UartImp::disableRxInterrupt()
 {
 	hwRegOps::clearBits( uartRegister->interruptEnable, rxInterruptEnableBit );
 }
 
-void Uart::flushTxBuffer()
+void UartImp::flushTxBuffer()
 {
 	data->txBuffer.readPointer = data->txBuffer.writePointer;
 }
 
-void Uart::flushRxBuffer()
+void UartImp::flushRxBuffer()
 {
 	data->rxBuffer.writePointer = data->rxBuffer.readPointer;
 }
 
-void Uart::copyToTxBuffer( const uint8_t* buffer, uint8_t length )
+void UartImp::copyToTxBuffer( const uint8_t* buffer, uint8_t length )
 {
 	uint8_t nextWritePointer = data->txBuffer.writePointer + 1;
 	while ( length > 0 )
@@ -174,7 +170,7 @@ void Uart::copyToTxBuffer( const uint8_t* buffer, uint8_t length )
 	}
 }
 
-uint8_t Uart::copyFromRxBuffer ( uint8_t* buffer )
+uint8_t UartImp::copyFromRxBuffer ( uint8_t* buffer )
 {
 	uint8_t length = 0;
 	while ( data->rxBuffer.readPointer != data->rxBuffer.writePointer )
@@ -191,7 +187,7 @@ uint8_t Uart::copyFromRxBuffer ( uint8_t* buffer )
 
 	return length;
 }
-bool Uart::enqueTxData( bufferType* txBuffer, volatile uint32_t* uartRegisterTxData )
+bool UartImp::enqueTxData( bufferType* txBuffer, volatile uint32_t* uartRegisterTxData )
 {
 	uint8_t* buffer = &txBuffer->buffer[0];
 	uint32_t bytesLeft = 0;
@@ -217,7 +213,7 @@ bool Uart::enqueTxData( bufferType* txBuffer, volatile uint32_t* uartRegisterTxD
     return ( 0 == bytesLeft );
 }
 
-void Uart::dequeRxData ( bufferType* rxBuffer, volatile uint32_t* uartRegisterRxData )
+void UartImp::dequeRxData ( bufferType* rxBuffer, volatile uint32_t* uartRegisterRxData )
 {
 	uint8_t* buffer = &rxBuffer->buffer[0];
 	asm volatile( "1: addi t0, %0, 1;"  /* t0 is the next write pointer */
@@ -243,7 +239,7 @@ void Uart::dequeRxData ( bufferType* rxBuffer, volatile uint32_t* uartRegisterRx
 
 /* Interrupt handlers */
 
-void Uart::uart0InterruptHandler()
+void UartImp::uart0InterruptHandler()
 {
     if ( true == hwRegOps::compareBits( uart0Register->interuptPending, txInterruptPendingBit ) )
     {
@@ -260,3 +256,7 @@ void Uart::uart0InterruptHandler()
     }
 }
 
+Uart::~Uart()
+{
+	/* C++ demands that even a pure virtual destructor has an implementation */
+}

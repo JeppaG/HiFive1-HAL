@@ -23,68 +23,52 @@
 
 #include "timer.hpp"
 #include "hwRegisterOperations.hpp"
-#include "gpio.hpp"
-#include "interrupt.hpp"
-
-Timer timerObject0( Timer::pwm0 );
-Timer timerObject1( Timer::pwm1 );
-Timer timerObject2( Timer::pwm2 );
-
-Timer* timer0 = &timerObject0;
-Timer* timer1 = &timerObject1;
-Timer* timer2 = &timerObject2;
-
 
 /***********************************************************************/
-Timer::timerRegisterType* const Timer::timerRegisterPwm0 = reinterpret_cast<timerRegisterType*>( pwm0BaseAddress );
-Timer::timerRegisterType* const Timer::timerRegisterPwm1 = reinterpret_cast<timerRegisterType*>( pwm1BaseAddress );
-Timer::timerRegisterType* const Timer::timerRegisterPwm2 = reinterpret_cast<timerRegisterType*>( pwm2BaseAddress );
+PwmImp::pwmRegisterType* const PwmImp::pwm0 = reinterpret_cast<pwmRegisterType* const>( pwm0BaseAddress );
+PwmImp::pwmRegisterType* const PwmImp::pwm1 = reinterpret_cast<pwmRegisterType* const>( pwm1BaseAddress );
+PwmImp::pwmRegisterType* const PwmImp::pwm2 = reinterpret_cast<pwmRegisterType* const>( pwm2BaseAddress );
 
-Timer::Timer( const uint8_t timerSelect )
-{
-	switch ( timerSelect )
-	{
-	case pwm0 : timerRegister = timerRegisterPwm0;
-		break;
-	case pwm1 : timerRegister = timerRegisterPwm1;
-		break;
-	case pwm2 : timerRegister = timerRegisterPwm2;
-		break;
-	default :
-		break;
-	}
-}
-
-Timer::~Timer()
+PwmImp::PwmImp( pwmRegisterType* pwmSelect ) :
+	pwmRegister( pwmSelect )
 {
 }
 
-void Timer::setUp1MsTimeBase()
+PwmImp::~PwmImp()
 {
-	timerRegister->pwmCmp0 = tickTimerPwm0CmpConfig;
-	timerRegister->pwmCfg = tickTimerConfig;
 }
 
-void Timer::waitFor1MsTimeOut()
+void PwmImp::setUp1MsTimeBase()
 {
-	while ( false == hwRegOps::compareBits( timerRegister->pwmCfg, cmp0IrqMask )  );
-	hwRegOps::clearBits( timerRegister->pwmCfg, cmp0IrqMask );
+	pwmRegister->pwmCmp0 = tickTimerPwm0CmpConfig;
+	pwmRegister->pwmCfg = tickTimerConfig;
+}
+
+void PwmImp::waitFor1MsTimeOut()
+{
+	while ( false == hwRegOps::compareBits( pwmRegister->pwmCfg, cmp0IrqMask )  );
+	hwRegOps::clearBits( pwmRegister->pwmCfg, cmp0IrqMask );
 }
 
 /* Interrupt handlers */
-void Timer::pwm1cmp0handler()
+void PwmImp::pwm1cmp0handler()
 {
 	static uint32_t count = 0;
 
-	hwRegOps::clearBits( timerRegisterPwm1->pwmCfg, cmp0IrqMask );
+	hwRegOps::clearBits( pwm1->pwmCfg, cmp0IrqMask );
 	count++;
 	if ( 250 == count )
 	{
-		gpio->clear( Gpio::pin21 );
+	//	gpio->clear( Gpio::pin21 );
 	}
 	else if ( 500 == count )
 	{
-		gpio->set( Gpio::pin21 );
+	//	gpio->set( Gpio::pin21 );
 		count = 0;
 	}
+}
+
+Pwm::~Pwm()
+{
+	/* C++ demands that even a pure virtual destrutor has an implementation */
 }

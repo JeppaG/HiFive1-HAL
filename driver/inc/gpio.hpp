@@ -26,7 +26,29 @@
 
 #include <cstdint>
 
-class Gpio {
+class Gpio
+{
+public:
+    virtual	void setAsOutput () =0;
+
+	virtual void setAsInput () =0;
+
+	virtual void setAsIoFunction0 () =0;
+
+	virtual void setAsIoFunction1 () =0;
+
+	virtual void vEnableRiseIrq () =0;
+
+	virtual void vDisableRiseIrq () =0;
+
+	virtual void set () =0;
+
+	virtual void clear () =0;
+
+	virtual ~Gpio() =0;
+};
+class GpioImp : public Gpio
+{
 public:
 
 	static constexpr uint32_t pin0  = 0x00000001;
@@ -62,28 +84,6 @@ public:
 	static constexpr uint32_t pin30 = 0x40000000;
 	static constexpr uint32_t pin31 = 0x80000000;
 
-	Gpio();
-
-	virtual ~Gpio();
-
-	void setAsOutput ( const uint32_t pin );
-
-	void setAsInput ( const uint32_t pin );
-
-	void setAsIoFunction0 ( const uint32_t pin );
-
-	void setAsIoFunction1 ( const uint32_t pin );
-
-	void vEnableRiseIrq ( const uint32_t pin );
-
-	void vDisableRiseIrq ( const uint32_t pin );
-
-	void set ( const uint32_t pin );
-
-	void clear ( const uint32_t pin );
-
-private:
-
 	typedef struct {
       volatile uint32_t value;            /* Base address + 0  */
       volatile uint32_t inputEnable;      /* Base address + 4  */
@@ -105,17 +105,38 @@ private:
 
 	} gpioRegisterType;
 
+	GpioImp( gpioRegisterType* const gpio, const uint32_t gpioPin );
+
+	virtual ~GpioImp();
+
+	void setAsOutput ();
+
+	void setAsInput ();
+
+	void setAsIoFunction0 ();
+
+	void setAsIoFunction1 ();
+
+	void vEnableRiseIrq ();
+
+	void vDisableRiseIrq ();
+
+	void set ();
+
+	void clear ();
+
 	/************************************************************************
 	 *  Compile-time configuration parameters
 	 ************************************************************************/
 
 	/* GPIO registers base addresses to the addresses indicated in the FE310-G000 chip manual */
-	static constexpr uint32_t gpio0 = 0x10012000u;
+	static constexpr uint32_t gpio0BaseAddress = 0x10012000u;
 
-	/************************************************************************/
-    static gpioRegisterType* const gpioRegister;
+    static gpioRegisterType* const gpio0;
+
+private:
+    gpioRegisterType* const gpioRegister;
+    const uint32_t pin;
 };
-
-extern Gpio* gpio;
 
 #endif /* GPIO_HPP_ */

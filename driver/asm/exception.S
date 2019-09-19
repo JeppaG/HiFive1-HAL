@@ -95,7 +95,8 @@ _enable_plic_interrupt:
 		sll t2, t2, t4            /* Set t2 as bit mask for the selected bit */
 
 		li a2, 0x1024             /* Clear bit 11 in the machine interrupt enable register */
-		csrrc zero, mie, a2       /* to disable machine external interrupts while clearing IP bit */
+		csrrc t6, mie, a2         /* to disable machine external interrupts while clearing IP bit */
+		and a2, t6, a2            /* Set a2 to remember the initial state of bit 11 in mie */
 
         /* Clear all plic interrupt enable bits and save them to enable them again when done */
 		add t6, zero, zero        /* use t6 as loop counter and t4 as end marker for the loop */
@@ -124,7 +125,7 @@ _enable_plic_interrupt:
         addi t0, t0, -4           /* Decrement the InterruptEnable register to the next register */
         bge t0, a1, 1b            /* Take the next InteruptEnable register */
 
-		csrrs zero, mie, a2       /* Enable machine external interrupts */
+		csrrs zero, mie, a2       /* Enable machine external interrupts if it was enabled before  */
 
 		ret
 	.cfi_endproc
@@ -132,21 +133,21 @@ _enable_plic_interrupt:
 .global _enable_interrupt
 _enable_interrupt:
 	.cfi_startproc
-		addi t0, zero, 0x8         /* Clear bit 3 in the machine interrupt enable register */
-		csrrc zero, mie, t0        /* to disable machine software interrupt                */
-		slli t0, t0, 4             /* Clear bit 7 in the machine interrupt enable register */
-		csrrc zero, mie, t0        /* to disable machine timer interrupts               */
-		slli t0, t0, 4             /* Set bit 11 in the machine interrupt enable register */
-		csrrs zero, mie, t0        /* to enable machine external interrupts               */
-		addi t0, zero, 0x8         /* Set bit 3 in the machine status register to enable */
-		csrrs zero, mstatus, t0    /* global interupts                                   */
+		csrrs zero, mstatus, t0  /* Set bit 3 in the machine status register to enable global interupts */
+		ret
+	.cfi_endproc
+
+.global _disable_interrupt
+_disable_interrupt:
+	.cfi_startproc
+		csrrci zero, mstatus, 8  /* Clear bit 3 in the machine status register to disable global interupts */
 		ret
 	.cfi_endproc
 
 .align 2                           /* This aligns the address to an even 2^n byte, so n=2 gives word alignment */
 trapvector:
 	.cfi_startproc
-		addi sp, sp, -64            /* Save ALL caller saved rgisters on the stack.  */
+		addi sp, sp, -64            /* Save ALL caller saved registers on the stack.  */
 		sw ra, 64(sp)               /* Since the user context is not aware that the  */
 		sw t0, 60(sp)				/* interrupt is executing, it has no way of preserving */
 		sw t1, 56(sp)               /* its registers, and the interrupt context doesn't  */
@@ -215,12 +216,24 @@ interrupt_vector_table:
 
 machine_sw_interrupt:
 	.cfi_startproc
-		j machine_sw_interrupt
+	    addi sp, sp, -4            /* Push the link register to the stack */
+	    sw ra, 4(sp)
+	    la t0, _swInterruptHandler /* Jump to the sw Interrupt Handler */
+	    jalr t0
+	    lw ra, 4(sp)               /* Pop the link register */
+	    addi sp, sp, 4
+	    ret
 	.cfi_endproc
 
 machine_timer_interrupt:
 	.cfi_startproc
-		j machine_timer_interrupt
+	    addi sp, sp, -4            /* Push the link register to the stack */
+	    sw ra, 4(sp)
+	    la t0, _tickTimerHandler   /* Jump to the tickTimer Interrupt Handler */
+	    jalr t0
+	    lw ra, 4(sp)               /* Pop the link register */
+	    addi sp, sp, 4
+	    ret
 	.cfi_endproc
 
 machine_external_interrupt:
