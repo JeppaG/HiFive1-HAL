@@ -25,6 +25,7 @@
 #include "hwRegisterOperations.hpp"
 #include "timer.hpp"
 #include "uart.hpp"
+#include "spi.hpp"
 
 extern "C"
 {
@@ -153,7 +154,7 @@ extern "C"
 		/* uart0    */ UartImp::uart0InterruptHandler,
 		/* uart1    */ PlicInterrupt::defaultHandler,
 		/* qspiI0   */ PlicInterrupt::defaultHandler,
-		/* qspiI1   */ PlicInterrupt::defaultHandler,
+		/* qspiI1   */ SpiImp::spi1InterruptHandler,
 		/* qspiI2   */ PlicInterrupt::defaultHandler,
 		/* gpio0    */ PlicInterrupt::defaultHandler,
 		/* gpio1    */ PlicInterrupt::defaultHandler,

@@ -42,6 +42,7 @@ DRIVER_SOURCE = \
   timer.cpp \
   gpio.cpp \
   uart.cpp \
+  spi.cpp \
   synchronize_harts.cpp \
   
 DRIVER_ASM = \

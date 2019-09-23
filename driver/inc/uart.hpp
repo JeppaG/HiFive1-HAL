@@ -100,7 +100,7 @@ private:
 	 */
 	static dataType  uart0Data;
 
-	uint32_t getBaudRateDiv ( const uint32_t tlClockInHz, const uint32_t ui32BaudRate );
+	uint32_t getBaudRateDiv ( const uint32_t tlClockInHz, const uint32_t ui32BaudRateInHz );
 
 	void enableTxInterrupt();
 
@@ -117,8 +117,6 @@ private:
 	void copyToTxBuffer( const uint8_t* buffer, const uint8_t length );
 
 	uint8_t copyFromRxBuffer ( uint8_t* buffer );
-
-	static void initTransmissionAndSwitchBufferInUse( dataType* data, uartRegisterType* theUartRegister );
 
 	static bool enqueTxData ( bufferType* txBuffer, volatile uint32_t* uartRegisterTxData );
 
