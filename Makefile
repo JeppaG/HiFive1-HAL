@@ -34,6 +34,7 @@ LD_FLAGS = -g -ffreestanding -Wl,--gc-sections -specs=nano.specs \
 
 APP_SOURCE = \
   echo.cpp \
+  board.cpp \
   
 DRIVER_SOURCE = \
   minimumCppRuntime.cpp \

@@ -76,6 +76,9 @@ public:
 
 	SpiImp( spiRegisterType* const selectedSpi,
 		     const uint32_t        selectedClockRate,
+			 Gpio* const           selectedSckPin,
+			 Gpio* const           selectedMosiPin,
+			 Gpio* const           selectedMisoPin,
 			 Gpio* const           selectedCsPin );
 
 	virtual ~SpiImp();
@@ -98,6 +101,9 @@ private:
 	} transactionType;
 
 	spiRegisterType* const spiRegister;
+	Gpio* const            sckPin;
+	Gpio* const            mosiPin;
+	Gpio* const     	   misoPin;
 	Gpio* const            csPin;
 	transactionType*       transaction;
 

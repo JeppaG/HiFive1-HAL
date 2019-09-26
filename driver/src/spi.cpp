@@ -38,14 +38,23 @@ SpiImp::spiRegisterType* const SpiImp::spi1 = reinterpret_cast<SpiImp::spiRegist
 
 SpiImp::SpiImp( spiRegisterType* const selectedSpi,
                 const uint32_t         selectedClockRate,
+				Gpio* const            selectedSckPin,
+				Gpio* const            selectedMosiPin,
+				Gpio* const            selectedMisoPin,
 				Gpio* const            selectedCsPin ) :
   spiRegister( selectedSpi ),
+  sckPin( selectedSckPin ),
+  mosiPin( selectedMosiPin ),
+  misoPin( selectedMisoPin ),
   csPin( selectedCsPin )
 {
 	if ( spi1 == selectedSpi )
 	{
 		transaction =  &spi1Transaction;
 		spi1CsPin = csPin;
+		sckPin->setAsIoFunction0();  /* SPI1 SCK */
+		mosiPin->setAsIoFunction0(); /* SPI1 MOSI */
+		misoPin->setAsIoFunction0(); /* SPI1 MISO */
 	}
 	else
 	{

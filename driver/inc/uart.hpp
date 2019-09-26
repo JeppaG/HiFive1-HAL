@@ -25,6 +25,7 @@
 #define UART_HPP_
 
 #include <cstdint>
+#include "gpio.hpp"
 
 class Uart {
 public:
@@ -59,7 +60,9 @@ public:
 	static uartRegisterType* const uart0Register;
 
 	UartImp( uartRegisterType* const selectedUart,
-		     const uint32_t    selectedBaudRate );
+		     const uint32_t    selectedBaudRate,
+			 Gpio* const       selectedTxPin,
+			 Gpio* const       selectedRxPin );
 
 	virtual ~UartImp();
 
@@ -94,6 +97,8 @@ private:
 
 	uartRegisterType* const uartRegister;
 	dataType*               data;
+	Gpio* const             txPin;
+	Gpio* const             rxPin;
 
 	/* The UART buffers needs to be accessed by the interrupt handlers, and therefore they have to
 	 * be declared static.

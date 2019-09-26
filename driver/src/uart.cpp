@@ -33,13 +33,19 @@ UartImp::dataType UartImp::uart0Data = {
 UartImp::uartRegisterType* const UartImp::uart0Register = reinterpret_cast<UartImp::uartRegisterType* const>( UartImp::uart0BaseAddress );
 
 UartImp::UartImp( uartRegisterType* const selectedUart,
-                  const uint32_t    selectedBaudRate ) :
-  uartRegister( selectedUart )
+                  const uint32_t    selectedBaudRate,
+				  Gpio* const       selectedTxPin,
+				  Gpio* const       selectedRxPin ) :
+    uartRegister( selectedUart ),
+	txPin( selectedTxPin ),
+	rxPin( selectedRxPin )
 {
 	uartRegister->baudRateDiv = getBaudRateDiv ( 256000000u, selectedBaudRate );
 	if ( uart0Register == selectedUart )
 	{
 		data =  &uart0Data;
+		txPin->setAsIoFunction0(); /* UART0 TX */
+		rxPin->setAsIoFunction0(); /* UART0 RX */
 	}
 	else
 	{
