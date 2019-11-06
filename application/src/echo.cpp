@@ -54,6 +54,7 @@ int main ()
 	board::greenLedPin->set();
 	board::blueLedPin->clear();
 	board::redLedPin->set();
+	board::uart0->transmit( spiString, 21 );
 	while ( 1 )
 	{
 		if ( 500 == count )

@@ -50,6 +50,7 @@ DRIVER_ASM = \
   entry.S \
   crt0.S \
   exception.S \
+  fifoOperations.S \
   
 INCLUDE_PATH = \
   -I driver/inc \

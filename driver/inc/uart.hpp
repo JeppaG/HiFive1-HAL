@@ -123,9 +123,9 @@ private:
 
 	uint8_t copyFromRxBuffer ( uint8_t* buffer );
 
-	static bool enqueTxData ( bufferType* txBuffer, volatile uint32_t* uartRegisterTxData );
+//	static bool enqueTxData ( bufferType* txBuffer, volatile uint32_t* uartRegisterTxData );
 
-	static void dequeRxData ( bufferType* rxBuffer, volatile uint32_t* uartRegisterRxData );
+//	static void dequeRxData ( bufferType* rxBuffer, volatile uint32_t* uartRegisterRxData );
 
 	bool transmitAndReturnSuccess( const uint8_t txData );
 

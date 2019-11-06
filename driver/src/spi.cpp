@@ -15,7 +15,7 @@
  *
  *****************************************************************************
  *
- * uart.cpp
+ * spi.cpp
  *
  *  Created on: 12 Aug 2019
  *      Author: jeppa
@@ -24,6 +24,17 @@
 #include "spi.hpp"
 #include "hwRegisterOperations.hpp"
 #include <cstring>
+
+extern "C"
+{
+    /* Prototypes for functions implemented in fifoOperations.S */
+    bool _enqueTxData( uint8_t**          txPointer,
+                       uint8_t*           bytesRemaining,
+                       volatile uint32_t* txFifoPtr );
+
+    void _dequeRxData( uint8_t**           rxPointer,
+                       volatile uint32_t*  rxFifoPtr );
+}
 
 SpiImp::transactionType SpiImp::spi1Transaction = {
 		                          /* complete */       true,
@@ -97,7 +108,9 @@ void SpiImp::transceive ( uint8_t* const buffer, const uint8_t length )
 	    transaction->txPointer = buffer;
 	    transaction->rxPointer = buffer;
 	    csPin->clear(); /* CS is active low */
-	    enqueTxData( transaction, spiRegister );
+	    _enqueTxData( &( transaction->txPointer ),
+	                  &( transaction->bytesRemaining ),
+	                  &( spiRegister->txData ) );
 	    if ( 7 < length )
 	    {
 	    	spiRegister->rxWaterMark = 7;
@@ -144,38 +157,6 @@ void SpiImp::disableRxInterrupt()
 	hwRegOps::clearBits( spiRegister->interruptEnable, rxInterruptEnableBit );
 }
 
-void SpiImp::enqueTxData( transactionType* trans, spiRegisterType* spiReg )
-{
-	asm volatile( "1: beq zero, %1, 2f;" /* End when no more bytes remain */
-			      "   lb t0, 0(%0);"    /* Read the next byte to transmit from the buffer */
-			      "   amoswap.w t0, t0, (%2);" /* Enque in txFifo and read out success status */
-			      "   bne t0, zero, 2f;"/* If no more bytes could be enqued, quit */
-				  "   addi %0, %0, 1;"  /* Increment the buffer pointer */
-			      "   addi %1, %1, -1;" /* Decrement the number of bytes remaining */
-				  "	  beq zero, zero, 1b;"
-			      "2:;"
-		 : /* Output Operands */ "+r" ( trans->txPointer ),     /* %0 */
-		                         "+r" ( trans->bytesRemaining ) /* %1 */
-		 : /* Input Operands */  "r" ( &spiReg->txData )        /* %2 */
-		 : /* Clobbered Registers */ "t0"
-    );
-}
-
-void SpiImp::dequeRxData ( transactionType* trans, spiRegisterType* spiReg )
-{
-	asm volatile( "1: lw t0, (%1);"      /* deque the next rx byte from the rxFiFo */
-    		      "   blt t0, zero, 2f;" /* Check if the Rx FIFO was empty, in that case we are done */
-			      "   sb t0, (%0);"      /* Write the dequed byte to the buffer */
-			      "   addi %0, %0, 1;"   /* Increment the rxPointer */
-				  "   beq zero, zero, 1b;"
-			      "2:;"
-		 : /* Output Operands */ "+r" ( trans->rxPointer ) /* %0 */
-		 : /* Input Operands */  "r" ( &spiReg->rxData )   /* %1 */
-		 : /* Clobbered Registers */ "t0"
-    );
-
-}
-
 /* Interrupt handlers */
 
 void SpiImp::spi1InterruptHandler()
@@ -194,8 +175,13 @@ void SpiImp::spi1InterruptHandler()
     	spi1CsPin->set(); /* CS is idle HIGH */
     }
 
-    enqueTxData( &spi1Transaction, spi1 );
-    dequeRxData( &spi1Transaction, spi1 );
+    _enqueTxData( &( spi1Transaction.txPointer ),
+                  &( spi1Transaction.bytesRemaining ),
+                  &( spi1->txData ) );
+//    enqueTxData( &spi1Transaction, spi1 );
+    _dequeRxData( &( spi1Transaction.rxPointer ),
+                  &( spi1->rxData ) );
+//    dequeRxData( &spi1Transaction, spi1 );
 }
 
 Spi::~Spi()

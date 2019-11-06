@@ -110,7 +110,7 @@ private:
 	/* The transaction data and spiRegisters needs to be accessed by the interrupt handlers,
 	 * and therefore they have to be declared static.
 	 */
-	/* The transction data abd the CS Pin needs to be accessed in the interrupt handler,
+	/* The transaction data and the CS Pin needs to be accessed in the interrupt handler,
 	 * and therefore needs to be copied to a static member variables */
 	static transactionType        spi1Transaction;
 	static Gpio*                  spi1CsPin;
@@ -132,10 +132,6 @@ private:
 	void copyToTxBuffer( const uint8_t* buffer, const uint8_t length );
 
 	uint8_t copyFromRxBuffer ( uint8_t* buffer );
-
-	static void enqueTxData ( transactionType* trans, spiRegisterType* spiReg );
-
-	static void dequeRxData ( transactionType* trans, spiRegisterType* spiReg );
 
 	bool transmitAndReturnSuccess( const uint8_t txData );
 
