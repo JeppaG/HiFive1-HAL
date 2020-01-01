@@ -33,7 +33,7 @@ LD_FLAGS = -g -ffreestanding -Wl,--gc-sections -specs=nano.specs \
 # Source file list
 
 APP_SOURCE = \
-  echo.cpp \
+  spiAdc.cpp \
   board.cpp \
   
 DRIVER_SOURCE = \
@@ -45,6 +45,7 @@ DRIVER_SOURCE = \
   uart.cpp \
   spi.cpp \
   synchronize_harts.cpp \
+  chip.cpp \
   
 DRIVER_ASM = \
   entry.S \
@@ -72,7 +73,7 @@ $(OBJ_PATH)/%.o : $(DRV_SOURCE_PATH)%.cpp
 $(OBJ_PATH)/%.o : $(DRV_ASM_PATH)%.S
 	$(G++) $(G++_FLAGS) $(INCLUDE_PATH) $< -o$@
 	 
-$(BUILD_PATH)/echo.elf : $(addprefix $(OBJ_PATH)/, $(OBJ))
+$(BUILD_PATH)/spiAdc.elf : $(addprefix $(OBJ_PATH)/, $(OBJ))
 	$(LD) $(LD_FLAGS) $^ -o$@
 		 
 clean :
@@ -84,4 +85,4 @@ clean :
 
 debug : ; $(info $$(addprefix $(OBJ_PATH), $(OBJ)) is [$(addprefix $(OBJ_PATH), $(OBJ))])
 	
-all : $(BUILD_PATH)/echo.elf
+all : $(BUILD_PATH)/spiAdc.elf

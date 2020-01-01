@@ -45,8 +45,6 @@ SpiImp::transactionType SpiImp::spi1Transaction = {
 
 Gpio* SpiImp::spi1CsPin = nullptr;
 
-SpiImp::spiRegisterType* const SpiImp::spi1 = reinterpret_cast<SpiImp::spiRegisterType* const>( SpiImp::spi1BaseAddress );
-
 SpiImp::SpiImp( spiRegisterType* const selectedSpi,
                 const uint32_t         selectedClockRate,
 				Gpio* const            selectedSckPin,

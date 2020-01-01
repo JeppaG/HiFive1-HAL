@@ -14,7 +14,7 @@
  *  limitations under the License.
  *
  *****************************************************************************
- * echo.cpp
+ * spiAdc.cpp
  *
  *  Created on: 5 Sep 2019
  *      Author: jeppa
@@ -60,7 +60,14 @@ int main ()
 		if ( 500 == count )
 		{
 			board::blueLedPin->clear();
-			board::uart0->transmit( spiBuffer, 2 );
+			char prtString[20];
+			int32_t voltageInMilliVolt = ( static_cast<int32_t>( spiBuffer[0] )*256 + static_cast<int32_t>( spiBuffer[1] ) );
+			voltageInMilliVolt *= 5000;
+			voltageInMilliVolt += 2048;
+			voltageInMilliVolt /= 4096;
+			sprintf( prtString, "%i\r\n", voltageInMilliVolt );
+			const uint8_t* prtPtr = (uint8_t*)( &prtString[0] );
+			board::uart0->transmit( prtPtr, 7 );
 			memcpy( spiBuffer, spiString, 2 );
 			board::spi1->transceive( spiBuffer, 2 );
 		}

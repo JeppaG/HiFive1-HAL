@@ -72,6 +72,7 @@ public:
       volatile uint32_t interruptPending;       /* Base address + 0x74 */
 	} spiRegisterType;
 
+	/* The spi1 registers base-address is defined in chip.cpp, or alternatively in the unit-test source code */
 	static spiRegisterType* const spi1;
 
 	SpiImp( spiRegisterType* const selectedSpi,
@@ -138,8 +139,6 @@ private:
 	/************************************************************************
 	 *  Compile-time configuration parameters
 	 ************************************************************************/
-	/* Set the pointers to the spi registers base addresses to the addresses indicated in the FE310-G000 chip manual */
-	static constexpr uint32_t spi1BaseAddress = 0x10024000u;
 
 	static constexpr uint32_t clockMode = 0x00000002u;
 	                                    /* 0000 0000 0000 0000 0000 0000 0000 0010
