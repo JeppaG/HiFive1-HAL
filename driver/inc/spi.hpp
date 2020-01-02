@@ -72,7 +72,8 @@ public:
       volatile uint32_t interruptPending;       /* Base address + 0x74 */
 	} spiRegisterType;
 
-	/* The spi1 registers base-address is defined in chip.cpp, or alternatively in the unit-test source code */
+	/* The spi1 registers base-address is defined in chip.cpp, or alternatively in the unit-test source code.
+	 * The spi registers need to be accessed by the interrupt-handler and must therefore be static members of the class */
 	static spiRegisterType* const spi1;
 
 	SpiImp( spiRegisterType* const selectedSpi,
@@ -108,9 +109,6 @@ private:
 	Gpio* const            csPin;
 	transactionType*       transaction;
 
-	/* The transaction data and spiRegisters needs to be accessed by the interrupt handlers,
-	 * and therefore they have to be declared static.
-	 */
 	/* The transaction data and the CS Pin needs to be accessed in the interrupt handler,
 	 * and therefore needs to be copied to a static member variables */
 	static transactionType        spi1Transaction;
